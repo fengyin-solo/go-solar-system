@@ -59,6 +59,32 @@ Create a new `.json` file in this directory with the following structure:
 }
 ```
 
+### YAML Files
+
+`.yaml` and `.yml` files are accepted as well, using the same field names and
+validation rules as JSON. Indented mappings and nested `moons` work as expected;
+empty documents, multi-document files, duplicate mapping keys, wrong scalar
+types and unknown top-level fields are rejected with line/column errors. Note
+that only `.json` files are embedded into the binary, so bundled systems stay
+JSON — YAML systems are loaded from the user directories listed above.
+
+```yaml
+systemName: Your System Name
+description: Brief description of the system
+discoveryYear: "2024"
+distance: 12 light-years
+galaxy: Milky Way
+bodies:
+  - englishName: Your Star
+    bodyType: Star
+    isPlanet: false
+    mass:
+      massValue: 1.0
+      massExponent: 30
+    moons:
+      - englishName: Your Moon
+```
+
 ### Required Fields
 
 #### System Metadata

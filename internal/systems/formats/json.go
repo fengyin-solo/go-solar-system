@@ -3,7 +3,6 @@ package formats
 import (
 	"encoding/json"
 	"fmt"
-	"strings"
 )
 
 // JSONFormat implements the FileFormat interface for JSON files
@@ -26,13 +25,17 @@ func (jf *JSONFormat) GetFormatName() string {
 
 // ParseSystemData parses the complete system data from JSON content
 func (jf *JSONFormat) ParseSystemData(data []byte) (*SystemData, error) {
+	if err := checkSize(data); err != nil {
+		return nil, err
+	}
+
 	var system SystemData
 	if err := json.Unmarshal(data, &system); err != nil {
 		return nil, fmt.Errorf("failed to parse JSON system data: %w", err)
 	}
 
 	// Validate required fields
-	if err := jf.validateSystemData(&system); err != nil {
+	if err := validateSystemData(&system); err != nil {
 		return nil, fmt.Errorf("invalid system data: %w", err)
 	}
 
@@ -41,13 +44,17 @@ func (jf *JSONFormat) ParseSystemData(data []byte) (*SystemData, error) {
 
 // ParseSystemMetadata parses only the metadata (for performance) from JSON content
 func (jf *JSONFormat) ParseSystemMetadata(data []byte) (*SystemMetadata, error) {
+	if err := checkSize(data); err != nil {
+		return nil, err
+	}
+
 	var metadata SystemMetadata
 	if err := json.Unmarshal(data, &metadata); err != nil {
 		return nil, fmt.Errorf("failed to parse JSON system metadata: %w", err)
 	}
 
 	// Validate required fields
-	if err := jf.validateSystemMetadata(&metadata); err != nil {
+	if err := validateSystemMetadata(&metadata); err != nil {
 		return nil, fmt.Errorf("invalid system metadata: %w", err)
 	}
 
@@ -56,6 +63,10 @@ func (jf *JSONFormat) ParseSystemMetadata(data []byte) (*SystemMetadata, error) 
 
 // ValidateFormat performs basic validation to ensure the data is valid JSON
 func (jf *JSONFormat) ValidateFormat(data []byte) error {
+	if err := checkSize(data); err != nil {
+		return err
+	}
+
 	var temp interface{}
 	if err := json.Unmarshal(data, &temp); err != nil {
 		return fmt.Errorf("invalid JSON format: %w", err)
@@ -81,33 +92,4 @@ func (jf *JSONFormat) ValidateFormat(data []byte) error {
 // GetMimeType returns the MIME type for JSON
 func (jf *JSONFormat) GetMimeType() string {
 	return "application/json"
-}
-
-// validateSystemData validates the complete system data structure
-func (jf *JSONFormat) validateSystemData(system *SystemData) error {
-	if strings.TrimSpace(system.SystemName) == "" {
-		return fmt.Errorf("systemName cannot be empty")
-	}
-
-	if len(system.Bodies) == 0 {
-		return fmt.Errorf("system must contain at least one celestial body")
-	}
-
-	// Validate each celestial body has required fields
-	for i, body := range system.Bodies {
-		if strings.TrimSpace(body.EnglishName) == "" {
-			return fmt.Errorf("celestial body at index %d missing englishName", i)
-		}
-	}
-
-	return nil
-}
-
-// validateSystemMetadata validates the system metadata structure
-func (jf *JSONFormat) validateSystemMetadata(metadata *SystemMetadata) error {
-	if strings.TrimSpace(metadata.SystemName) == "" {
-		return fmt.Errorf("systemName cannot be empty")
-	}
-
-	return nil
 }

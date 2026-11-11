@@ -2,27 +2,73 @@ package formats
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/furan917/go-solar-system/internal/models"
 )
 
+// MaxSystemFileSize bounds the size of an external system definition. It mirrors
+// the 10 MiB response cap used for the live Solar System API (api.MaxResponseSize)
+// so file-based and network-based systems share the same upper limit.
+const MaxSystemFileSize = 10 * 1024 * 1024
+
 // SystemData represents an external star system with metadata
 type SystemData struct {
-	SystemName    string                 `json:"systemName"`
-	Description   string                 `json:"description"`
-	DiscoveryYear string                 `json:"discoveryYear"`
-	Distance      string                 `json:"distance"`
-	Galaxy        string                 `json:"galaxy"`
-	Bodies        []models.CelestialBody `json:"bodies"`
+	SystemName    string                 `json:"systemName" yaml:"systemName"`
+	Description   string                 `json:"description" yaml:"description"`
+	DiscoveryYear string                 `json:"discoveryYear" yaml:"discoveryYear"`
+	Distance      string                 `json:"distance" yaml:"distance"`
+	Galaxy        string                 `json:"galaxy" yaml:"galaxy"`
+	Bodies        []models.CelestialBody `json:"bodies" yaml:"bodies"`
 }
 
 // SystemMetadata represents just the metadata portion (without celestial bodies)
 type SystemMetadata struct {
-	SystemName    string `json:"systemName"`
-	Description   string `json:"description"`
-	DiscoveryYear string `json:"discoveryYear"`
-	Distance      string `json:"distance"`
-	Galaxy        string `json:"galaxy"`
+	SystemName    string `json:"systemName" yaml:"systemName"`
+	Description   string `json:"description" yaml:"description"`
+	DiscoveryYear string `json:"discoveryYear" yaml:"discoveryYear"`
+	Distance      string `json:"distance" yaml:"distance"`
+	Galaxy        string `json:"galaxy" yaml:"galaxy"`
+}
+
+// validateSystemData validates the complete system data structure.
+// Shared by every registered format so JSON and YAML enforce the same rules.
+func validateSystemData(system *SystemData) error {
+	if strings.TrimSpace(system.SystemName) == "" {
+		return fmt.Errorf("systemName cannot be empty")
+	}
+
+	if len(system.Bodies) == 0 {
+		return fmt.Errorf("system must contain at least one celestial body")
+	}
+
+	// Validate each celestial body has required fields
+	for i, body := range system.Bodies {
+		if strings.TrimSpace(body.EnglishName) == "" {
+			return fmt.Errorf("celestial body at index %d missing englishName", i)
+		}
+	}
+
+	return nil
+}
+
+// validateSystemMetadata validates the system metadata structure.
+// Shared by every registered format so JSON and YAML enforce the same rules.
+func validateSystemMetadata(metadata *SystemMetadata) error {
+	if strings.TrimSpace(metadata.SystemName) == "" {
+		return fmt.Errorf("systemName cannot be empty")
+	}
+
+	return nil
+}
+
+// checkSize rejects payloads larger than the shared system definition limit.
+func checkSize(data []byte) error {
+	if len(data) > MaxSystemFileSize {
+		return fmt.Errorf("system file is too large: %d bytes (max: %d)", len(data), MaxSystemFileSize)
+	}
+
+	return nil
 }
 
 // FileFormat defines the interface that all file format handlers must implement
@@ -60,11 +106,10 @@ func NewFormatRegistry() *FormatRegistry {
 		formats:  make([]FileFormat, 0),
 	}
 
-	// Register built-in formats
+	// Register built-in formats. JSON is registered first so content-based
+	// detection claims JSON payloads before YAML (JSON is valid YAML syntax).
 	registry.RegisterFormat(NewJSONFormat())
-
-	// Example: To add YAML support, uncomment the line below and ensure yaml.go has proper implementation
-	// registry.RegisterFormat(NewYAMLFormat())
+	registry.RegisterFormat(NewYAMLFormat())
 
 	return registry
 }

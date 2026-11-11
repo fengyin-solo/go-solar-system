@@ -210,6 +210,105 @@ func TestSystemsSearchDirsWithoutEnvVar(t *testing.T) {
 	}
 }
 
+func systemYAML(displayName string) string {
+	return "systemName: " + displayName + "\n" +
+		"description: d\n" +
+		"bodies:\n" +
+		"  - englishName: b\n"
+}
+
+func TestScanSystemsFindsYAMLExtensions(t *testing.T) {
+	bundled := fstest.MapFS{
+		"yaml-system.yaml": {Data: []byte(systemYAML("YAML System"))},
+		"yml-system.yml":   {Data: []byte(systemYAML("YML System"))},
+		"json-system.json": {Data: []byte(systemJSON("JSON System"))},
+	}
+
+	sm := NewSystemManager(bundled)
+	if err := sm.ScanSystems(); err != nil {
+		t.Fatalf("ScanSystems: %v", err)
+	}
+
+	got := sm.GetAvailableSystems()
+	want := []string{"solar-system", "json-system", "yaml-system", "yml-system"}
+	if len(got) != len(want) {
+		t.Fatalf("got %v, want %v", got, want)
+	}
+	for i := range want {
+		if got[i] != want[i] {
+			t.Fatalf("got %v, want %v", got, want)
+		}
+	}
+
+	for name, wantName := range map[string]string{
+		"yaml-system": "YAML System",
+		"yml-system":  "YML System",
+	} {
+		data, err := sm.LoadSystem(name)
+		if err != nil {
+			t.Fatalf("LoadSystem(%s): %v", name, err)
+		}
+		if data.SystemName != wantName {
+			t.Errorf("%s: got %q, want %q", name, data.SystemName, wantName)
+		}
+
+		metadata, err := sm.LoadSystemMetadata(name)
+		if err != nil {
+			t.Fatalf("LoadSystemMetadata(%s): %v", name, err)
+		}
+		if metadata.SystemName != wantName || metadata.Bodies != nil {
+			t.Errorf("%s metadata wrong: %+v", name, metadata)
+		}
+	}
+}
+
+func TestYAMLFileShadowsJSONBySourceOrder(t *testing.T) {
+	// Both extensions of a later source must override the bundled JSON file,
+	// regardless of which format handler parses them.
+	for _, ext := range []string{".yaml", ".yml"} {
+		t.Run(ext, func(t *testing.T) {
+			dir := t.TempDir()
+			if err := os.WriteFile(filepath.Join(dir, "alpha-centauri"+ext),
+				[]byte(systemYAML("Overridden YAML")), 0o644); err != nil {
+				t.Fatal(err)
+			}
+
+			bundled := fstest.MapFS{"alpha-centauri.json": {Data: []byte(systemJSON("Bundled JSON"))}}
+			sm := NewSystemManager(bundled, dir)
+			if err := sm.ScanSystems(); err != nil {
+				t.Fatalf("ScanSystems: %v", err)
+			}
+
+			data, err := sm.LoadSystem("alpha-centauri")
+			if err != nil {
+				t.Fatalf("LoadSystem: %v", err)
+			}
+			if data.SystemName != "Overridden YAML" {
+				t.Errorf("user %s should shadow bundled JSON by source order, got %q", ext, data.SystemName)
+			}
+		})
+	}
+}
+
+func TestInvalidYAMLFileFailsLoad(t *testing.T) {
+	bundled := fstest.MapFS{
+		"broken.yaml": {Data: []byte("systemName: Broken\nsystemName: Again\nbodies: []\n")},
+	}
+
+	sm := NewSystemManager(bundled)
+	if err := sm.ScanSystems(); err != nil {
+		t.Fatalf("ScanSystems: %v", err)
+	}
+
+	if _, err := sm.LoadSystem("broken"); err == nil {
+		t.Fatal("expected duplicate-key YAML to fail loading")
+	}
+
+	if err := sm.ValidateSystemFile("ignored.yaml"); err == nil {
+		t.Fatal("ValidateSystemFile should surface read errors for missing files")
+	}
+}
+
 func TestBothUserDirsAreScanned(t *testing.T) {
 	configDir, envDir := t.TempDir(), t.TempDir()
 
