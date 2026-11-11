@@ -23,6 +23,20 @@ go build
 
 That should work. If it doesn't, check if you have Go installed?
 
+## Offline mode
+
+The app normally loads the Solar System from the online API. If you are offline
+(or the API is down), it automatically falls back to a built-in definition of
+the Sun, the eight planets and Pluto and prints a warning to stderr. To skip the
+network entirely, start it explicitly in offline mode:
+
+```bash
+go-solar-system --offline
+```
+
+Offline mode never makes a network request, and a corrupted built-in definition
+aborts startup instead of showing a different star system.
+
 ## Controls (the important stuff)
 
 **Basic navigation:**

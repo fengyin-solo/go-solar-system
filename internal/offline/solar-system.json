@@ -1,0 +1,228 @@
+{
+  "bodies": [
+    {
+      "id": "soleil",
+      "name": "Sun",
+      "englishName": "Sun",
+      "isPlanet": false,
+      "bodyType": "Star",
+      "moons": [],
+      "semimajorAxis": 0,
+      "perihelion": 0,
+      "aphelion": 0,
+      "eccentricity": 0,
+      "inclination": 0,
+      "mass": {
+        "massValue": 1.9891,
+        "massExponent": 30
+      },
+      "density": 1.408,
+      "gravity": 274.0,
+      "meanRadius": 695700,
+      "sideralOrbit": 0,
+      "sideralRotation": 609.12,
+      "discoveredBy": "Ancient",
+      "discoveryDate": "Prehistoric"
+    },
+    {
+      "id": "mercure",
+      "name": "Mercure",
+      "englishName": "Mercury",
+      "isPlanet": true,
+      "bodyType": "Planet",
+      "moons": [],
+      "semimajorAxis": 57909050,
+      "perihelion": 46001200,
+      "aphelion": 69816900,
+      "eccentricity": 0.20563,
+      "inclination": 7.005,
+      "mass": {
+        "massValue": 3.3011,
+        "massExponent": 23
+      },
+      "density": 5.427,
+      "gravity": 3.7,
+      "meanRadius": 2439.7,
+      "sideralOrbit": 87.969,
+      "sideralRotation": 1407.6
+    },
+    {
+      "id": "venus",
+      "name": "Vénus",
+      "englishName": "Venus",
+      "isPlanet": true,
+      "bodyType": "Planet",
+      "moons": [],
+      "semimajorAxis": 108208000,
+      "perihelion": 107477000,
+      "aphelion": 108939000,
+      "eccentricity": 0.00677,
+      "inclination": 3.395,
+      "mass": {
+        "massValue": 4.8675,
+        "massExponent": 24
+      },
+      "density": 5.243,
+      "gravity": 8.87,
+      "meanRadius": 6051.8,
+      "sideralOrbit": 224.701,
+      "sideralRotation": -5832.5
+    },
+    {
+      "id": "terre",
+      "name": "Terre",
+      "englishName": "Earth",
+      "isPlanet": true,
+      "bodyType": "Planet",
+      "moons": [],
+      "semimajorAxis": 149597890,
+      "perihelion": 147098450,
+      "aphelion": 152097530,
+      "eccentricity": 0.01671,
+      "inclination": 0,
+      "mass": {
+        "massValue": 5.97237,
+        "massExponent": 24
+      },
+      "density": 5.513,
+      "gravity": 9.798,
+      "meanRadius": 6371.0,
+      "sideralOrbit": 365.256,
+      "sideralRotation": 23.9345
+    },
+    {
+      "id": "mars",
+      "name": "Mars",
+      "englishName": "Mars",
+      "isPlanet": true,
+      "bodyType": "Planet",
+      "moons": [],
+      "semimajorAxis": 227939200,
+      "perihelion": 206650000,
+      "aphelion": 249261000,
+      "eccentricity": 0.0934,
+      "inclination": 1.85,
+      "mass": {
+        "massValue": 6.4171,
+        "massExponent": 23
+      },
+      "density": 3.934,
+      "gravity": 3.72,
+      "meanRadius": 3389.5,
+      "sideralOrbit": 686.98,
+      "sideralRotation": 24.6229
+    },
+    {
+      "id": "jupiter",
+      "name": "Jupiter",
+      "englishName": "Jupiter",
+      "isPlanet": true,
+      "bodyType": "Planet",
+      "moons": [],
+      "semimajorAxis": 778340821,
+      "perihelion": 740349000,
+      "aphelion": 816620000,
+      "eccentricity": 0.0489,
+      "inclination": 1.303,
+      "mass": {
+        "massValue": 1.898187,
+        "massExponent": 27
+      },
+      "density": 1.326,
+      "gravity": 24.79,
+      "meanRadius": 69911,
+      "sideralOrbit": 4332.589,
+      "sideralRotation": 9.9259
+    },
+    {
+      "id": "saturne",
+      "name": "Saturne",
+      "englishName": "Saturn",
+      "isPlanet": true,
+      "bodyType": "Planet",
+      "moons": [],
+      "semimajorAxis": 1433545120,
+      "perihelion": 1349823000,
+      "aphelion": 1514505000,
+      "eccentricity": 0.0565,
+      "inclination": 2.485,
+      "mass": {
+        "massValue": 5.68336,
+        "massExponent": 26
+      },
+      "density": 0.687,
+      "gravity": 10.44,
+      "meanRadius": 58232,
+      "sideralOrbit": 10759.22,
+      "sideralRotation": 10.6565
+    },
+    {
+      "id": "uranus",
+      "name": "Uranus",
+      "englishName": "Uranus",
+      "isPlanet": true,
+      "bodyType": "Planet",
+      "moons": [],
+      "semimajorAxis": 2872463107,
+      "perihelion": 2734998000,
+      "aphelion": 3006318000,
+      "eccentricity": 0.0457,
+      "inclination": 0.773,
+      "mass": {
+        "massValue": 8.68127,
+        "massExponent": 25
+      },
+      "density": 1.27,
+      "gravity": 8.87,
+      "meanRadius": 25362,
+      "sideralOrbit": 30688.5,
+      "sideralRotation": -17.24
+    },
+    {
+      "id": "neptune",
+      "name": "Neptune",
+      "englishName": "Neptune",
+      "isPlanet": true,
+      "bodyType": "Planet",
+      "moons": [],
+      "semimajorAxis": 4495060341,
+      "perihelion": 4471050000,
+      "aphelion": 4539560000,
+      "eccentricity": 0.0113,
+      "inclination": 1.77,
+      "mass": {
+        "massValue": 1.024126,
+        "massExponent": 26
+      },
+      "density": 1.638,
+      "gravity": 11.15,
+      "meanRadius": 24622,
+      "sideralOrbit": 60182,
+      "sideralRotation": 16.11
+    },
+    {
+      "id": "pluton",
+      "name": "Pluton",
+      "englishName": "Pluto",
+      "isPlanet": false,
+      "bodyType": "Dwarf Planet",
+      "moons": [],
+      "semimajorAxis": 5906440000,
+      "perihelion": 4436820000,
+      "aphelion": 7376070000,
+      "eccentricity": 0.2488,
+      "inclination": 17.16,
+      "mass": {
+        "massValue": 1.303,
+        "massExponent": 22
+      },
+      "density": 1.854,
+      "gravity": 0.62,
+      "meanRadius": 1188.3,
+      "sideralOrbit": 90560,
+      "sideralRotation": -153.293,
+      "discoveredBy": "Clyde W. Tombaugh",
+      "discoveryDate": "1930-02-18"
+    }
+  ]
+}

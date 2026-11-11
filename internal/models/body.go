@@ -1,6 +1,7 @@
 package models
 
 import (
+	"fmt"
 	"math"
 	"time"
 )
@@ -100,4 +101,48 @@ func (cb *CelestialBody) GetVolumeKm3() float64 {
 		return 0
 	}
 	return cb.Vol.VolValue * math.Pow10(cb.Vol.VolExponent)
+}
+
+// ValidateCelestialBody performs the same structural validation applied to
+// bodies returned by the online API, so offline and online data are checked
+// against identical rules.
+func ValidateCelestialBody(body CelestialBody) error {
+	// Must have at least one name identifier
+	if body.EnglishName == "" && body.Name == "" && body.ID == "" {
+		return fmt.Errorf("celestial body missing all name identifiers")
+	}
+
+	displayName := body.EnglishName
+	if displayName == "" {
+		displayName = body.Name
+	}
+	if displayName == "" {
+		displayName = body.ID
+	}
+
+	if body.MeanRadius < 0 {
+		return fmt.Errorf("celestial body %s has negative mean radius", displayName)
+	}
+
+	if body.SemimajorAxis < 0 {
+		return fmt.Errorf("celestial body %s has negative semimajor axis", displayName)
+	}
+
+	if body.Density < 0 {
+		return fmt.Errorf("celestial body %s has negative density", displayName)
+	}
+
+	if body.Gravity < 0 {
+		return fmt.Errorf("celestial body %s has negative gravity", displayName)
+	}
+
+	if body.Eccentricity < 0 || body.Eccentricity > 1 {
+		return fmt.Errorf(
+			"celestial body %s has unrealistic eccentricity: %.6f",
+			displayName,
+			body.Eccentricity,
+		)
+	}
+
+	return nil
 }

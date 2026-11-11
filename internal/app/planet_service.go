@@ -2,10 +2,13 @@ package app
 
 import (
 	"fmt"
+	"log"
+	"os"
 	"sort"
 
 	"github.com/furan917/go-solar-system/internal/api"
 	"github.com/furan917/go-solar-system/internal/models"
+	"github.com/furan917/go-solar-system/internal/offline"
 	"github.com/furan917/go-solar-system/internal/systems"
 )
 
@@ -13,14 +16,67 @@ import (
 type PlanetService struct {
 	client        *api.Client
 	systemManager *systems.SystemManager
+
+	// offline skips every network request and only uses built-in data.
+	offline bool
+	// offlineLoader loads the built-in solar system; it is a field so tests
+	// can inject deterministic fixtures and failure cases.
+	offlineLoader func() ([]models.CelestialBody, error)
+	// logger receives fallback warnings and defaults to stderr.
+	logger *log.Logger
+}
+
+// PlanetServiceOption customizes a PlanetService.
+type PlanetServiceOption func(*PlanetService)
+
+// WithOfflineMode forces the service to use the built-in solar system
+// definition without ever contacting the remote API.
+func WithOfflineMode() PlanetServiceOption {
+	return func(ps *PlanetService) {
+		ps.offline = true
+	}
+}
+
+// WithOfflineLoader replaces the built-in loader. It is intended for tests
+// that need deterministic offline data or need to simulate a corrupted
+// built-in definition.
+func WithOfflineLoader(loader func() ([]models.CelestialBody, error)) PlanetServiceOption {
+	return func(ps *PlanetService) {
+		if loader != nil {
+			ps.offlineLoader = loader
+		}
+	}
+}
+
+// WithPlanetServiceLogger redirects fallback warnings to the given logger.
+// Defaults to stderr when not provided.
+func WithPlanetServiceLogger(logger *log.Logger) PlanetServiceOption {
+	return func(ps *PlanetService) {
+		if logger != nil {
+			ps.logger = logger
+		}
+	}
 }
 
 // NewPlanetService creates a new planet service with necessary dependencies
-func NewPlanetService(client *api.Client, systemManager *systems.SystemManager) *PlanetService {
-	return &PlanetService{
+func NewPlanetService(client *api.Client, systemManager *systems.SystemManager, opts ...PlanetServiceOption) *PlanetService {
+	ps := &PlanetService{
 		client:        client,
 		systemManager: systemManager,
+		offlineLoader: offline.LoadOfflineSolarSystem,
+		logger:        log.New(os.Stderr, "", log.LstdFlags),
 	}
+
+	for _, opt := range opts {
+		opt(ps)
+	}
+
+	return ps
+}
+
+// IsOffline reports whether the service runs in explicit offline mode.
+func (ps *PlanetService) IsOffline() bool {
+	return ps.offline
 }
 
 // LoadCurrentSystem loads celestial bodies for the current system
@@ -34,9 +90,56 @@ func (ps *PlanetService) LoadCurrentSystem() ([]models.CelestialBody, error) {
 	return ps.loadExternalSystem(currentSystem)
 }
 
-// loadSolarSystem loads our solar system from the API
+// LoadSolarSystemBodies returns the bodies displayed for our solar system.
+//
+// In explicit offline mode the remote API is never contacted: only the
+// built-in definition is loaded and validated, and a failure there is
+// returned to the caller so startup aborts instead of showing wrong data.
+//
+// In the default online mode the API is tried first. When the request fails
+// or returns no planets, the built-in definition is used as fallback and a
+// clear warning is written to stderr. A successful API request keeps the
+// existing behavior and produces no extra output.
+func (ps *PlanetService) LoadSolarSystemBodies() ([]models.CelestialBody, error) {
+	if ps.offline {
+		bodies, err := ps.offlineLoader()
+		if err != nil {
+			return nil, fmt.Errorf("failed to load built-in offline solar system: %w", err)
+		}
+
+		return bodies, nil
+	}
+
+	planets, err := ps.client.GetPlanets()
+	if err == nil && len(planets) > 0 {
+		return planets, nil
+	}
+
+	if err == nil {
+		err = fmt.Errorf("API returned no planets")
+	}
+
+	ps.logger.Printf(
+		"WARNING: Solar System API request failed (%v); using built-in offline solar system data instead",
+		err,
+	)
+
+	bodies, fallbackErr := ps.offlineLoader()
+	if fallbackErr != nil {
+		return nil, fmt.Errorf(
+			"solar system API unavailable (%v) and built-in offline fallback failed: %w",
+			err,
+			fallbackErr,
+		)
+	}
+
+	return bodies, nil
+}
+
+// loadSolarSystem loads our solar system, honoring offline mode and the
+// online-failure fallback, and returns its planets sorted by distance.
 func (ps *PlanetService) loadSolarSystem() ([]models.CelestialBody, error) {
-	bodies, err := ps.client.GetAllBodies()
+	bodies, err := ps.LoadSolarSystemBodies()
 	if err != nil {
 		return nil, fmt.Errorf("failed to load solar system: %w", err)
 	}

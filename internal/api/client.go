@@ -27,6 +27,12 @@ type Client struct {
 }
 
 func NewClient() *Client {
+	return NewClientWithBaseURL(constants.SolarSystemAPIBase)
+}
+
+// NewClientWithBaseURL creates a client targeting the given API base URL.
+// It is primarily useful for tests and for pointing the app at a mirror.
+func NewClientWithBaseURL(baseURL string) *Client {
 	// Use environment variable first; fallback to baked-in constant
 	apiKey := ""
 	if envKey := os.Getenv("SOLAR_SYSTEM_API_KEY"); envKey != "" {
@@ -43,7 +49,7 @@ func NewClient() *Client {
 		httpClient: &http.Client{
 			Timeout: constants.DefaultTimeout,
 		},
-		baseURL: constants.SolarSystemAPIBase,
+		baseURL: baseURL,
 		apiKey:  apiKey,
 	}
 }
@@ -120,7 +126,7 @@ func (c *Client) GetAllBodies() ([]models.CelestialBody, error) {
 	// Normalize and filter bodies
 	validBodies := make([]models.CelestialBody, 0, len(apiResponse.Bodies))
 	for _, body := range apiResponse.Bodies {
-		if err := validateCelestialBody(body); err == nil {
+		if err := models.ValidateCelestialBody(body); err == nil {
 			// Normalize: ensure EnglishName is populated (fallback to Name, then ID)
 			if body.EnglishName == "" {
 				if body.Name != "" {
@@ -197,7 +203,7 @@ func (c *Client) GetBody(id string) (*models.CelestialBody, error) {
 		return nil, fmt.Errorf("failed to unmarshal body %s: %w", id, err)
 	}
 
-	if err := validateCelestialBody(celestialBody); err != nil {
+	if err := models.ValidateCelestialBody(celestialBody); err != nil {
 		return nil, fmt.Errorf("invalid celestial body data for %s: %w", id, err)
 	}
 
@@ -271,46 +277,5 @@ func validateAPIResponse(response models.APIResponse) error {
 	}
 
 	// Individual body validation happens during filtering in GetAllBodies()
-	return nil
-}
-
-func validateCelestialBody(body models.CelestialBody) error {
-	// Must have at least one name identifier
-	if body.EnglishName == "" && body.Name == "" && body.ID == "" {
-		return fmt.Errorf("celestial body missing all name identifiers")
-	}
-
-	displayName := body.EnglishName
-	if displayName == "" {
-		displayName = body.Name
-	}
-	if displayName == "" {
-		displayName = body.ID
-	}
-
-	if body.MeanRadius < 0 {
-		return fmt.Errorf("celestial body %s has negative mean radius", displayName)
-	}
-
-	if body.SemimajorAxis < 0 {
-		return fmt.Errorf("celestial body %s has negative semimajor axis", displayName)
-	}
-
-	if body.Density < 0 {
-		return fmt.Errorf("celestial body %s has negative density", displayName)
-	}
-
-	if body.Gravity < 0 {
-		return fmt.Errorf("celestial body %s has negative gravity", displayName)
-	}
-
-	if body.Eccentricity < 0 || body.Eccentricity > 1 {
-		return fmt.Errorf(
-			"celestial body %s has unrealistic eccentricity: %.6f",
-			displayName,
-			body.Eccentricity,
-		)
-	}
-
 	return nil
 }

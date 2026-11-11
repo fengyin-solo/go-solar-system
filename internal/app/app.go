@@ -32,7 +32,27 @@ type SolarSystem struct {
 	mouseHandler    *MouseEventHandler
 }
 
-func NewSolarSystem(bundledSystems fs.FS) (*SolarSystem, error) {
+// Option customizes SolarSystem construction.
+type Option func(*appConfig)
+
+type appConfig struct {
+	offline bool
+}
+
+// WithOffline runs the application entirely from the built-in solar system
+// definition and skips all remote API requests.
+func WithOffline() Option {
+	return func(cfg *appConfig) {
+		cfg.offline = true
+	}
+}
+
+func NewSolarSystem(bundledSystems fs.FS, opts ...Option) (*SolarSystem, error) {
+	cfg := &appConfig{}
+	for _, opt := range opts {
+		opt(cfg)
+	}
+
 	logger := log.New(os.Stderr, "[SolarSystem] ", log.LstdFlags|log.Lshortfile)
 
 	// Initialize core dependencies
@@ -54,7 +74,12 @@ func NewSolarSystem(bundledSystems fs.FS) (*SolarSystem, error) {
 	// Initialize state and core components
 	state := NewAppState()
 	errorHandler := NewErrorHandler(logger, state)
-	planetService := NewPlanetService(client, systemManager)
+
+	var serviceOpts []PlanetServiceOption
+	if cfg.offline {
+		serviceOpts = append(serviceOpts, WithOfflineMode())
+	}
+	planetService := NewPlanetService(client, systemManager, serviceOpts...)
 
 	// Initialize rendering components
 	width, height := screen.Size()

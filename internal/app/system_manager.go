@@ -34,23 +34,18 @@ func (sm *SystemManager) LoadCurrentSystem() error {
 	currentSystem := sm.uiRenderer.GetSystemManager().GetCurrentSystem()
 
 	if currentSystem == "solar-system" {
-		planets, err := sm.planetService.GetClient().GetPlanets()
+		bodies, err := sm.planetService.LoadSolarSystemBodies()
 		if err != nil {
-			fallbackErr := sm.uiRenderer.GetSystemManager().SwitchToSystem("alpha-centauri")
-			if fallbackErr != nil {
-				return NewAPIError("Solar System API unavailable, fallback failed", err).
-					WithContext("system", currentSystem)
-			}
-
-			return sm.LoadCurrentSystem()
-		}
-
-		if len(planets) == 0 {
-			return NewValidationError("no planets received from API", nil).
+			return NewAPIError("failed to load solar system", err).
 				WithContext("system", currentSystem)
 		}
 
-		sm.state.SetPlanets(planets)
+		if len(bodies) == 0 {
+			return NewValidationError("no celestial bodies loaded for solar system", nil).
+				WithContext("system", currentSystem)
+		}
+
+		sm.state.SetPlanets(bodies)
 	} else {
 		systemData, err := sm.uiRenderer.GetSystemManager().GetSystemData()
 		if err != nil {
